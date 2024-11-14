@@ -5,8 +5,11 @@ dotenv.config();
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
 const databaseId = process.env.NOTION_DATABASE_ID;
 
+module.exports = queryDatabase;
 async function queryDatabase(req, res) {
+    
     const id = +req.url.split('/')[1];
+    
     try {
         const response = await notion.databases.query({
             database_id: databaseId,
@@ -32,17 +35,21 @@ async function queryDatabase(req, res) {
                 image: pages.properties["Image"].files[0].external.url
             }
         });
+        
         res.writeHead(200, { 'Content-Type': 'text/plain' });
         res.end(JSON.stringify(ret));
     } catch (error){
         console.log(error.body);
     }
 }
-module.exports = queryDatabase;
 
-async function deleteItem(databaseId, id) {
+module.exports = deleteItem;
+async function deleteItem(req, res) {
+    
+    const id = +req.url.split('/')[1];
+
     try {
-        await notion.databases.query({
+       await notion.databases.query({
             database_id: databaseId,
             "filter": {
                 "property": "ID",
@@ -51,17 +58,19 @@ async function deleteItem(databaseId, id) {
                 }
             }
         }).then(async pageId => {
-            const response = await notion.blocks.delete({
+            await notion.blocks.delete({
                 block_id: pageId.results[0].id,
             });
-            console.log(response);
+            res.writeHead(200, { 'Content-Type': 'text/plain' });
+            res.end('Item deletado com suceso!');
         })
+        
     } catch (error) {
         console.log(error.body);
     }
 }
 
-async function addToDatabase(databaseId, company, content, campaign, description, where, language, image_content, image) {
+async function addToDatabase(company, content, campaign, description, where, language, image_content, image) {
     try {
         const response = await notion.pages.create({
             parent: {
@@ -159,7 +168,7 @@ async function addToDatabase(databaseId, company, content, campaign, description
                 }
             }    
         });
-        console.log(response);
+        //console.log(response);
     } catch (error) {
         console.error(error.body);
     }
@@ -270,7 +279,7 @@ async function updateItem(databaseId, id, company, content, campaign, descriptio
                     }
                 },
                 });
-            console.log(response);
+            //console.log(response);
         } catch (error) {
             console.log(error.body);
         }
